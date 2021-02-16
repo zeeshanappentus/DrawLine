@@ -13,11 +13,12 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 
-import androidx.annotation.Nullable;
+import java.util.ArrayList;
 
 public class MyDrawView extends View implements View.OnTouchListener {
 
     Paint paint = new Paint();
+    ArrayList<Line> list = new ArrayList<>();
     GestureDetector gestureDetector;
     boolean actionStarted = false;
     Point startPoint = new Point();
@@ -25,6 +26,7 @@ public class MyDrawView extends View implements View.OnTouchListener {
     boolean actionCompleted = false;
 
     Context context;
+    Canvas canvas;
 
     public MyDrawView(Context context) {
         super(context);
@@ -56,7 +58,12 @@ public class MyDrawView extends View implements View.OnTouchListener {
     @Override
     protected void onDraw(Canvas canvas) {
         if(actionCompleted){
-            canvas.drawLine((float) startPoint.x,(float) startPoint.y,(float) endPoint.x,(float) endPoint.y,paint);
+            this.canvas = canvas;
+            Log.d("TAG1", "onDraw: 1");
+            for (Line l : list)
+               canvas.drawLine((float) l.startX, (float) l.startY, (float) l.endX, (float) l.endY, paint);
+//               canvas.drawLine((float) startPoint.x, (float) startPoint.y, (float) endPoint.x, (float) endPoint.y, paint);
+
         }
         super.onDraw(canvas);
     }
@@ -72,7 +79,9 @@ public class MyDrawView extends View implements View.OnTouchListener {
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = wm.getDefaultDisplay();
         Point size = new Point();
+        Log.d("TAG2", "onMeasure: "+size);
         display.getSize(size);
+        Log.d("TAG3", "onMeasure: "+size.x +","+ size.y );
         setMeasuredDimension( size.x, size.y);
     }
 
@@ -92,15 +101,23 @@ public class MyDrawView extends View implements View.OnTouchListener {
         @Override
         public boolean onSingleTapUp(MotionEvent e) {
             if(actionStarted){
+
                 actionStarted = false;
-                endPoint.x = (int) e.getX();
-                endPoint.y = (int) e.getY();
+//                endPoint.x = (int) e.getX();
+//                endPoint.y = (int) e.getY();
+                Line currentLine = list.get(list.size() - 1);
+                currentLine.endX = e.getX();
+                currentLine.endY = e.getY();
+
                 actionCompleted = true;
                 invalidate();
             }else{
                 actionStarted = true;
-                startPoint.x = (int) e.getX();
-                startPoint.y = (int) e.getY();            }
+//                startPoint.x = (int) e.getX();
+//                startPoint.y = (int) e.getY();
+                list.add(new Line((int) e.getX(), (int) e.getY()));
+
+            }
             return true;
         }
 
@@ -119,19 +136,33 @@ public class MyDrawView extends View implements View.OnTouchListener {
         @Override
         public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
 //            (x1,y1)
-            float x1 = e1.getX();
-            float y1 = e1.getY();
-
+//            float x1 = e1.getX();
+//            float y1 = e1.getY();
+//
 //            (x2,y2)
-            float x2 = e2.getY();
-            float y2 = e2.getY();
-
+//            float x2 = e2.getY();
+//            float y2 = e2.getY();
+//
 //            calculating distance between two point...
-            double distance = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
-            Log.d("learning_gesture_Fling", "onFling: done "+ distance);
+//            double distance = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
+//            Log.d("learning_gesture_Fling", "onFling: done "+ distance);
             return true;
+        }
+    }
+
+    class Line {
+        float startX, startY, endX, endY;
+        public Line(float startX, float startY, float endX, float endY) {
+            this.startX = startX;
+            this.startY = startY;
+            this.endX = endX;
+            this.endY = endY;
+        }
+        public Line(float startX, float startY) {
+            this.startX = startX;
+            this.startY = startY;
+//            this(startX, startY, startX, startY);
         }
 
     }
-
 }
