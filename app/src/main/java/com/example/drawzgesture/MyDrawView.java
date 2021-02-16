@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Display;
@@ -25,6 +26,8 @@ public class MyDrawView extends View implements View.OnTouchListener {
     Point endPoint = new Point();
     boolean actionCompleted = false;
 
+    boolean singleTap = false;
+    boolean scroll = false;
     Context context;
     Canvas canvas;
 
@@ -59,11 +62,23 @@ public class MyDrawView extends View implements View.OnTouchListener {
     protected void onDraw(Canvas canvas) {
         if(actionCompleted){
             this.canvas = canvas;
-            Log.d("TAG1", "onDraw: 1");
-            for (Line l : list)
-               canvas.drawLine((float) l.startX, (float) l.startY, (float) l.endX, (float) l.endY, paint);
+            if (singleTap) {
+                Log.d("TAG1", "onDraw: 1");
+                for (Line l : list)
+                    canvas.drawLine((float) l.startX, (float) l.startY, (float) l.endX, (float) l.endY, paint);
 //               canvas.drawLine((float) startPoint.x, (float) startPoint.y, (float) endPoint.x, (float) endPoint.y, paint);
-
+            }
+            if (scroll){
+//                canvas.drawLine((float) startPoint.x, (float) startPoint.y, (float) endPoint.x, (float) endPoint.y, paint);
+                int radius = 5;
+                RectF oval = new RectF();
+                oval.set(startPoint.x - radius, startPoint.y + radius, endPoint.x + radius, endPoint.y - radius);
+//                int startAngle = (Math.atan2(y1-y0, x1-x0) * (180/Math.PI)) ;
+//                int sweepAngle = (Math.atan2(y2-y0, x2-x0) * (180/Math.PI)) ;
+                double startAngle = (Math.atan2(startPoint.y, startPoint.x) * (180/Math.PI)) ;
+                double sweepAngle = (Math.atan2(endPoint.y, endPoint.x) * (180/Math.PI)) ;
+                canvas.drawArc(oval, (float)startAngle, (float)sweepAngle, true, paint);
+            }
         }
         super.onDraw(canvas);
     }
@@ -79,9 +94,7 @@ public class MyDrawView extends View implements View.OnTouchListener {
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = wm.getDefaultDisplay();
         Point size = new Point();
-        Log.d("TAG2", "onMeasure: "+size);
         display.getSize(size);
-        Log.d("TAG3", "onMeasure: "+size.x +","+ size.y );
         setMeasuredDimension( size.x, size.y);
     }
 
@@ -116,8 +129,9 @@ public class MyDrawView extends View implements View.OnTouchListener {
 //                startPoint.x = (int) e.getX();
 //                startPoint.y = (int) e.getY();
                 list.add(new Line((int) e.getX(), (int) e.getY()));
-
             }
+            singleTap = true;
+            scroll = false;
             return true;
         }
 
@@ -129,7 +143,28 @@ public class MyDrawView extends View implements View.OnTouchListener {
 
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            Log.d("learning_gesture", "onScroll: done");
+            Log.d("learning_gesture_Scroll", "onScroll: done");
+            Log.d("learning_gesture_Scroll", "onScroll -distanceX " + distanceX);
+            Log.d("learning_gesture_Scroll", "onScroll: distanceY " + distanceY);
+            Log.d("learning_gesture_Scroll", "onScroll: X1 " + e1.getX());
+            Log.d("learning_gesture_Scroll", "onScroll: Y1 " + e1.getY());
+            Log.d("learning_gesture_Scroll", "onScroll: X2 " + e2.getX());
+            Log.d("learning_gesture_Scroll", "onScroll: Y2 " + e2.getY());
+
+            if(actionStarted){
+                actionStarted = false;
+                endPoint.x = (int) e2.getX();
+                endPoint.y = (int) e2.getY();
+                actionCompleted = true;
+                invalidate();
+            }else{
+                actionStarted = true;
+//              list.add(new Line((int) e1.getX(), (int) e1.getY()));
+                startPoint.x = (int) e1.getX();
+                startPoint.y = (int) e1.getY();
+            }
+            singleTap = false;
+            scroll = true;
             return true;
         }
 
@@ -163,6 +198,5 @@ public class MyDrawView extends View implements View.OnTouchListener {
             this.startY = startY;
 //            this(startX, startY, startX, startY);
         }
-
     }
 }
